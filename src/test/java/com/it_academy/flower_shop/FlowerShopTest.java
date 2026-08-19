@@ -9,7 +9,6 @@ import com.it_academy.flower_shop.entity.model.flower.Lily;
 import com.it_academy.flower_shop.entity.model.flower.Pion;
 import com.it_academy.flower_shop.entity.model.flower.Rose;
 import com.it_academy.flower_shop.service.impl.BouquetServiceImpl;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,9 +27,11 @@ import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName("Bouquet testing.")
 class FlowerShopTest {
+    private static final double DELTA = 0.0001;
     private static BouquetServiceImpl bouquetService;
 
     private Bouquet bouquet;
@@ -84,13 +85,13 @@ class FlowerShopTest {
     @DisplayName("Testing the total cost of the bouquet.")
     @MethodSource("getTotalPriceProviderArguments")
     @ParameterizedTest(name = "Expected {0}.")
-    void getTotalPrice(double expected, @NotNull Bouquet bouquets) {
+    void getTotalPrice(double expected, Bouquet bouquets) {
         var actualMethod = bouquets.getPrice();
 
         assertAll(
-                () -> assertEquals(expected, actualMethod),
-                () -> assertEquals(141.5, bouquet.getPrice()),
-                () -> assertEquals(115.0, onlyFlower.getPrice())
+                () -> assertEquals(expected, actualMethod, DELTA),
+                () -> assertEquals(141.5, bouquet.getPrice(), DELTA),
+                () -> assertEquals(115.0, onlyFlower.getPrice(), DELTA)
         );
     }
 
@@ -105,7 +106,7 @@ class FlowerShopTest {
                 new Rose("Red rose", 60, 30, 25, "Big")
         );
 
-        var actual = bouquetService.sortedFlower((List<Flower>) bouquet.getFlowerList());
+        var actual = bouquetService.sortedFlower(bouquet.getFlowerList());
 
         assertEquals(expected, actual);
     }
@@ -116,10 +117,48 @@ class FlowerShopTest {
         Optional<Flower> expected = Optional.of(
                 new Lily("Yellow lily", 50, 24, 5, "Hybrid"));
 
-        var actual = bouquetService.findFlower(
-                (List<Flower>) bouquet.getFlowerList(), 22, 26);
+        var actual = bouquetService.findFlower(bouquet.getFlowerList(), 22, 26);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("Reject invalid search ranges.")
+    void rejectInvalidSearchRange() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> bouquetService.findFlower(bouquet.getFlowerList(), 30, 20)),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> bouquetService.findFlower(bouquet.getFlowerList(), -1, 20)),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> bouquetService.findFlower(bouquet.getFlowerList(), 10, Double.NaN))
+        );
+    }
+
+    @Test
+    @DisplayName("Reject invalid domain values.")
+    void rejectInvalidDomainValues() {
+        assertAll(
+                () -> assertThrows(NullPointerException.class,
+                        () -> new Lily(null, 50, 24, 5, "Hybrid")),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new Lily("Lily", -1, 24, 5, "Hybrid")),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new Lily("Lily", 50, -1, 5, "Hybrid")),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new Lily("Lily", 50, 24, -1, "Hybrid")),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new Ribbon("Ribbon", 10, Double.POSITIVE_INFINITY, "Waves"))
+        );
+    }
+
+    @Test
+    @DisplayName("Bouquet exposes defensive copies of its flowers.")
+    void flowerListIsDefensiveCopy() {
+        var copy = bouquet.getFlowerList();
+        copy.clear();
+
+        assertEquals(5, bouquet.getFlowerList().size());
     }
 
     @Test
@@ -183,71 +222,61 @@ class FlowerShopTest {
     @Test
     @DisplayName("Ribbon description.")
     void printRibbon() {
-        var expected = "Name: Pink ribbon | Length: 10,00 | Price: 0,40 | Decor: Waves";
+        var expected = "Name: Pink ribbon | Length: 10.00 | Price: 0.40 | Decor: Waves";
 
-        var actual = ribbon.toString();
-
-        assertEquals(expected, actual);
+        assertEquals(expected, ribbon.toString());
     }
 
     @Test
     @DisplayName("Wrapping paper description.")
     void printWrappingPaper() {
-        var expected = "Name: White wrapping paper | Length: 15,00 | Price: 1,50 | Material: Transparent";
+        var expected = "Name: White wrapping paper | Length: 15.00 | Price: 1.50 | Material: Transparent";
 
-        var actual = wrappingPaper.toString();
-
-        assertEquals(expected, actual);
+        assertEquals(expected, wrappingPaper.toString());
     }
 
     @Test
     @DisplayName("Lily description.")
     void printLily() {
-        var expected = "Name: Yellow lily | Freshness: 50 | length: 24,00 | Price: 5,00 | Type: Hybrid";
+        var expected = "Name: Yellow lily | Freshness: 50 | length: 24.00 | Price: 5.00 | Type: Hybrid";
 
-        var actual = lily.toString();
-
-        assertEquals(expected, actual);
+        assertEquals(expected, lily.toString());
     }
 
     @Test
     @DisplayName("Pion description.")
     void printPion() {
-        var expected = "Name: Black pion | Freshness: 45 | length: 18,00 | Price: 30,00 | Country: USA";
+        var expected = "Name: Black pion | Freshness: 45 | length: 18.00 | Price: 30.00 | Country: USA";
 
-        var actual = pion.toString();
-
-        assertEquals(expected, actual);
+        assertEquals(expected, pion.toString());
     }
 
     @Test
     @DisplayName("Rose description.")
     void printRose() {
-        var expected = "Name: Red rose | Freshness: 60 | length: 30,00 | Price: 25,00 | Thorn: Big";
+        var expected = "Name: Red rose | Freshness: 60 | length: 30.00 | Price: 25.00 | Thorn: Big";
 
-        var actual = rose.toString();
-
-        assertEquals(expected, actual);
+        assertEquals(expected, rose.toString());
     }
 
     private static String boughtDescriptions() {
-        return format("%nBouquet | Name: Mix | Price: 141,50$%n" +
-                "Name: Yellow lily | Freshness: 50 | length: 24,00 | Price: 5,00 | Type: Hybrid%n" +
-                "Name: Black pion | Freshness: 45 | length: 18,00 | Price: 30,00 | Country: USA%n" +
-                "Name: Black pion | Freshness: 45 | length: 18,00 | Price: 30,00 | Country: USA%n" +
-                "Name: Red rose | Freshness: 60 | length: 30,00 | Price: 25,00 | Thorn: Big%n" +
-                "Name: Red rose | Freshness: 60 | length: 30,00 | Price: 25,00 | Thorn: Big%n%n" +
-                "Name: Pink ribbon | Length: 10,00 | Price: 0,40 | Decor: Waves%n" +
-                "Name: White wrapping paper | Length: 15,00 | Price: 1,50 | Material: Transparent%n");
+        return format("%nBouquet | Name: Mix | Price: 141.50$%n" +
+                "Name: Yellow lily | Freshness: 50 | length: 24.00 | Price: 5.00 | Type: Hybrid%n" +
+                "Name: Black pion | Freshness: 45 | length: 18.00 | Price: 30.00 | Country: USA%n" +
+                "Name: Black pion | Freshness: 45 | length: 18.00 | Price: 30.00 | Country: USA%n" +
+                "Name: Red rose | Freshness: 60 | length: 30.00 | Price: 25.00 | Thorn: Big%n" +
+                "Name: Red rose | Freshness: 60 | length: 30.00 | Price: 25.00 | Thorn: Big%n%n" +
+                "Name: Pink ribbon | Length: 10.00 | Price: 0.40 | Decor: Waves%n" +
+                "Name: White wrapping paper | Length: 15.00 | Price: 1.50 | Material: Transparent%n");
     }
 
     private static String boughtOnlyFlowerDescriptions() {
-        return format("%nBouquet | Name:  | Price: 115,00$%n" +
-                "Name: Yellow lily | Freshness: 50 | length: 24,00 | Price: 5,00 | Type: Hybrid%n" +
-                "Name: Black pion | Freshness: 45 | length: 18,00 | Price: 30,00 | Country: USA%n" +
-                "Name: Black pion | Freshness: 45 | length: 18,00 | Price: 30,00 | Country: USA%n" +
-                "Name: Red rose | Freshness: 60 | length: 30,00 | Price: 25,00 | Thorn: Big%n" +
-                "Name: Red rose | Freshness: 60 | length: 30,00 | Price: 25,00 | Thorn: Big%n%n");
+        return format("%nBouquet | Name:  | Price: 115.00$%n" +
+                "Name: Yellow lily | Freshness: 50 | length: 24.00 | Price: 5.00 | Type: Hybrid%n" +
+                "Name: Black pion | Freshness: 45 | length: 18.00 | Price: 30.00 | Country: USA%n" +
+                "Name: Black pion | Freshness: 45 | length: 18.00 | Price: 30.00 | Country: USA%n" +
+                "Name: Red rose | Freshness: 60 | length: 30.00 | Price: 25.00 | Thorn: Big%n" +
+                "Name: Red rose | Freshness: 60 | length: 30.00 | Price: 25.00 | Thorn: Big%n%n");
     }
 
     @Test
@@ -256,12 +285,9 @@ class FlowerShopTest {
         var firstExpected = boughtDescriptions();
         var secondExpected = boughtOnlyFlowerDescriptions();
 
-        var actual = bouquet.toString();
-        var actualONly = onlyFlower.toString();
-
         assertAll(
-                () -> assertEquals(firstExpected, actual),
-                () -> assertEquals(secondExpected, actualONly)
+                () -> assertEquals(firstExpected, bouquet.toString()),
+                () -> assertEquals(secondExpected, onlyFlower.toString())
         );
     }
 }

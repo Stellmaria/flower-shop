@@ -5,47 +5,51 @@ import com.it_academy.flower_shop.entity.model.accessory.Accessory;
 import com.it_academy.flower_shop.entity.model.flower.Flower;
 import com.it_academy.flower_shop.service.Price;
 import lombok.EqualsAndHashCode;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 import static java.lang.String.format;
 
 /**
+ * A bouquet containing flowers and optional accessories.
+ *
  * @author Anastasia Melnikova
  */
 @EqualsAndHashCode(callSuper = true)
-@NotNull
 public class Bouquet extends ShopItem implements Price {
-    private final Collection<Flower> flowerList;
-    private final Collection<Accessory> accessoryList;
+    private final List<Flower> flowerList;
+    private final List<Accessory> accessoryList;
 
     public Bouquet(String name, Collection<Flower> flowers, Collection<Accessory> accessories) {
         super(name);
-        this.flowerList = new ArrayList<>(flowers);
-        this.accessoryList = new ArrayList<>(accessories);
+        this.flowerList = List.copyOf(Objects.requireNonNull(flowers, "flowers must not be null"));
+        this.accessoryList = List.copyOf(Objects.requireNonNull(accessories, "accessories must not be null"));
     }
 
     public Bouquet(Collection<Flower> flowers) {
-        this("", flowers, new ArrayList<>());
+        this("", flowers, List.of());
     }
 
     public Bouquet(String name, Collection<Accessory> accessories) {
-        this(name, new ArrayList<>(), new ArrayList<>(accessories));
+        this(name, List.of(), accessories);
     }
 
     public Bouquet(Flower flower) {
-        this("", new ArrayList<>(List.of(flower)), new ArrayList<>());
+        this("", List.of(Objects.requireNonNull(flower, "flower must not be null")), List.of());
     }
 
     public Bouquet(Accessory accessory) {
-        this("", new ArrayList<>(), new ArrayList<>(List.of(accessory)));
+        this("", List.of(), List.of(Objects.requireNonNull(accessory, "accessory must not be null")));
     }
 
     public Bouquet(Flower flower, Accessory accessory) {
-        this("", new ArrayList<>(List.of(flower)), new ArrayList<>(List.of(accessory)));
+        this("",
+                List.of(Objects.requireNonNull(flower, "flower must not be null")),
+                List.of(Objects.requireNonNull(accessory, "accessory must not be null")));
     }
 
     @Override
@@ -58,14 +62,18 @@ public class Bouquet extends ShopItem implements Price {
                 .sum();
     }
 
-    public Collection<Flower> getFlowerList() {
+    public List<Flower> getFlowerList() {
         return new ArrayList<>(flowerList);
+    }
+
+    public List<Accessory> getAccessoryList() {
+        return new ArrayList<>(accessoryList);
     }
 
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder(
-                format("%nBouquet | Name: %s | Price: %.2f$%n", getName(), getPrice()));
+                format(Locale.ROOT, "%nBouquet | Name: %s | Price: %.2f$%n", getName(), getPrice()));
 
         flowerList.forEach(flower -> stringBuilder
                 .append(flower)
