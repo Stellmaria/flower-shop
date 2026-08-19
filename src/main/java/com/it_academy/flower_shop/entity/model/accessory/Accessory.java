@@ -7,6 +7,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
+ * Base class for bouquet accessories sold by length.
+ *
  * @author Anastasia Melnikova
  */
 @Getter
@@ -17,7 +19,15 @@ public abstract class Accessory extends ShopItem implements Length, Price {
 
     protected Accessory(String name, double length, double price) {
         super(name);
+        requireNonNegativeFinite(length, "length");
+        requireNonNegativeFinite(price, "price");
         this.length = length;
         this.price = price;
+    }
+
+    private static void requireNonNegativeFinite(double value, String fieldName) {
+        if (!Double.isFinite(value) || value < 0) {
+            throw new IllegalArgumentException(fieldName + " must be a finite non-negative number");
+        }
     }
 }
